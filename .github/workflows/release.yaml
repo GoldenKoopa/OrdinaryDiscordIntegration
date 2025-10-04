@@ -94,7 +94,7 @@ jobs:
           project: ${{ secrets.MODRINTH_PROJECT_ID }}
           name: v${{ github.event.inputs.version }}
           version: ${{ github.event.inputs.version }}
-          status: draft
+          status: unlisted
           loaders: |-
             fabric
           game-versions: |-
