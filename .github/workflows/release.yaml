@@ -45,7 +45,7 @@ jobs:
       - name: generate versions json and set matrix 
         id: set-matrix
         run: |
-          echo "$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
+          echo -n "$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
           pwd 
 
   release:
