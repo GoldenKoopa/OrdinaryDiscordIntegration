@@ -84,7 +84,7 @@ jobs:
       - name: Load filename into env var
         run: |
           ls artifacts
-          filename=$(ls versions/${{ matrix.version }}/build/libs/ | grep -v all | grep -v sources)
+          filename=$(ls artifacts/${{ matrix.version }}/build/libs/ | grep -v all | grep -v sources)
           echo -n "FILENAME=$filename" >> "$GITHUB_ENV"
 
       - name: Upload to Modrinth
