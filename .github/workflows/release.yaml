@@ -42,7 +42,9 @@ jobs:
     steps: 
       - name: generate versions json and set matrix 
         id: set-matrix
-        run: echo "$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
+          pwd 
 
   release:
     name: Release
