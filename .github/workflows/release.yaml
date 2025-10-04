@@ -98,4 +98,4 @@ jobs:
             fabric
           game-versions: |-
             ${{ env.MINECRAFT_VERSIONS }}
-          files: versions/${{ matrix.version }}/build/libs/DiscordJustSync*.jar
+          files: versions/${{ matrix.version }}/build/libs/${{ env.FILENAME }}
