@@ -31,5 +31,5 @@ jq -n --argjson n "${#arr[@]}" '
     )
 ' --args "${!arr[@]}" "${arr[@]}" > versions.json
 
-echo "${!arr[@]}" | jq -c -R 'split(" ")'
+echo "${!arr[@]}" | jq -c -r -R 'split(" ")'
 
