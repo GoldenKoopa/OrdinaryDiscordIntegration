@@ -12,34 +12,45 @@ permissions:
   contents: read # for checkout
 
 jobs:
-  build:
+  # build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: checkout repository
+  #       uses: actions/checkout@v5
+  #     - name: validate gradle wrapper
+  #       uses: gradle/actions/wrapper-validation@v5
+  #     - name: setup jdk 21
+  #       uses: actions/setup-java@v5
+  #       with:
+  #         java-version: 21
+  #         distribution: 'temurin'
+  #     - name: gradle setup
+  #       uses: gradle/actions/setup-gradle@v5
+  #     - name: build
+  #       run: ./gradlew build -Pversion=v${{ github.event.inputs.version }}
+  #     - name: capture build artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: Artifacts
+  #         path: versions/*/build/libs/
+
+  generate-versions:
+    name: Generate versions
     runs-on: ubuntu-latest
-    steps:
-      - name: checkout repository
-        uses: actions/checkout@v4
-      - name: validate gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-      - name: setup jdk 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: 'microsoft'
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-      - name: gradle setup
-        uses: gradle/actions/setup-gradle@v4
-      - name: build
-        run: ./gradlew build -Pversion=${{ github.ref_name }}-${{ github.event.inputs.version }}
-      - name: capture build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Artifacts
-          path: build/libs/
+    outputs:
+        versions: ${{ steps.set-matrix.outputs.versions }}
+    steps: 
+      - name: generate versions json and set matrix 
+        id: set-matrix
+        run: echo "$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
 
   release:
     name: Release
-    needs: [build]
+    # needs: [build]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ${{ fromJSON(needs.generate-versions.outputs.versions) }}
     permissions:
       contents: write
       issues: write
@@ -53,43 +64,29 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: Extract Minecraft version
-        run: |
-          minecraft_version=$(grep "^minecraft_version=" "gradle.properties" | cut -d'=' -f2)
-          echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
-          last_minecraft_version=$(grep "^last_minecraft_version=" "gradle.properties" | cut -d'=' -f2)
-          echo "LAST_MINECRAFT_VERSION=$last_minecraft_version" >> $GITHUB_ENV
-
-      - name: Generate Minecraft versions JSON
-        run: |
-          if [[ -z "$LAST_MINECRAFT_VERSION" ]]; then
-              LAST_MINECRAFT_VERSION=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest.release')
-          fi
-
-          MAJOR_MINOR=$(echo "$MINECRAFT_VERSION" | cut -d. -f1,2)
-          START_PATCH=$(echo "$MINECRAFT_VERSION" | cut -d. -f3)
-          END_PATCH=$(echo "$LAST_MINECRAFT_VERSION" | cut -d. -f3)
-
-          seq $START_PATCH $END_PATCH | awk -v mm="$MAJOR_MINOR" '{print mm "." $1}' | jq -R . | jq -s -c . > versions.json
 
       - name: Load generated versions into env var
-
+        env:
+          version: $ {{ matrix.version }}
         run: |
-          VERSIONS=$(jq -r '.[]' versions.json | paste -sd '\n' -)
-          echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
-          echo "$VERSIONS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "$version"
 
-      - name: Upload to Modrinth
-        uses: cloudnode-pro/modrinth-publish@v2
-        with:
-          token: ${{ secrets.MODRINTH_TOKEN }}
-          project: ${{ secrets.MODRINTH_PROJECT_ID }}
-          name: v${{ github.event.inputs.version }}
-          version: ${{ github.event.inputs.version }}
-          status: draft
-          loaders: |-
-            fabric
-          game-versions: |-
-            ${{ env.MINECRAFT_VERSIONS }}
-          files: build/libs/DiscordJustSync-${{ github.ref_name }}-${{ github.event.inputs.version }}.jar
+      #   run: |
+      #     VERSIONS=$(jq -r '.[]' versions.json | paste -sd '\n' -)
+      #     echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
+      #     echo "$VERSIONS" >> $GITHUB_ENV
+      #     echo "EOF" >> $GITHUB_ENV
+      #
+      # - name: Upload to Modrinth
+      #   uses: cloudnode-pro/modrinth-publish@v2
+      #   with:
+      #     token: ${{ secrets.MODRINTH_TOKEN }}
+      #     project: ${{ secrets.MODRINTH_PROJECT_ID }}
+      #     name: v${{ github.event.inputs.version }}
+      #     version: ${{ github.event.inputs.version }}
+      #     status: draft
+      #     loaders: |-
+      #       fabric
+      #     game-versions: |-
+      #       ${{ env.MINECRAFT_VERSIONS }}
+      #     files: build/libs/DiscordJustSync-${{ github.ref_name }}-${{ github.event.inputs.version }}.jar
