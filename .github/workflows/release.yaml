@@ -54,7 +54,7 @@ jobs:
   release:
     name: Release
     # needs: [build]
-    needs: [generate-versions]
+    needs: [generate-versions, build]
     runs-on: ubuntu-latest
     strategy:
       matrix:
