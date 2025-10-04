@@ -127,6 +127,11 @@ processResources {
     }
 }
 
+version = property('version')
+if (property('last_minecraft_version') != "") {
+    version = version + "+" + property('minecraft_version') + "-" + property('last_minecraft_version')
+}
+
 tasks.register("prodServer", net.fabricmc.loom.task.prod.ServerProductionRunTask) {
     def version = (project.hasProperty('version') && project.property('version') != 'unspecified') 
         ? project.property('version'): project.property('minecraft_version')
