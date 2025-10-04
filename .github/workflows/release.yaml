@@ -71,7 +71,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Artifacts
-          path: versions/*/build/libs/
+          path: artifacts
 
       - name: Load generated versions into env var
         env:
@@ -83,6 +83,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
       - name: Load filename into env var
         run: |
+          ls artifacts
           filename=$(ls versions/${{ matrix.version }}/build/libs/ | grep -v all | grep -v sources)
           echo -n "FILENAME=$filename" >> "$GITHUB_ENV"
 
@@ -98,4 +99,4 @@ jobs:
             fabric
           game-versions: |-
             ${{ env.MINECRAFT_VERSIONS }}
-          files: versions/${{ matrix.version }}/build/libs/${{ env.FILENAME }}
+          files: artifacts/${{ matrix.version }}/build/libs/${{ env.FILENAME }}
