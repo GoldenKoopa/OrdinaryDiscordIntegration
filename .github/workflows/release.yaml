@@ -12,27 +12,30 @@ permissions:
   contents: read # for checkout
 
 jobs:
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: checkout repository
-  #       uses: actions/checkout@v5
-  #     - name: validate gradle wrapper
-  #       uses: gradle/actions/wrapper-validation@v5
-  #     - name: setup jdk 21
-  #       uses: actions/setup-java@v5
-  #       with:
-  #         java-version: 21
-  #         distribution: 'temurin'
-  #     - name: gradle setup
-  #       uses: gradle/actions/setup-gradle@v5
-  #     - name: build
-  #       run: ./gradlew build -Pversion=v${{ github.event.inputs.version }}
-  #     - name: capture build artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: Artifacts
-  #         path: versions/*/build/libs/
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v5
+      - name: setup jdk 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'temurin'
+      - name: gradle setup
+        uses: gradle/actions/setup-gradle@v5
+      - name: build
+        run: ./gradlew build -Pversion=v${{ github.event.inputs.version }}
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts
+          path: |
+            !versions/*/build/libs/*-all.jar
+            !versions/*/build/libs/*-sources.jar
+            versions/*/build/libs/*
 
   generate-versions:
     name: Generate versions
@@ -64,34 +67,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # - name: Download build artifacts
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: Artifacts
-      #     path: versions/*/build/libs/
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: versions/*/build/libs/
 
       - name: Load generated versions into env var
         env:
           version: ${{ matrix.version }}
         run: |
-          echo "$version"
+          VERSIONS=$(jq -r --arg version "$version" '.[$version][]' versions.json | jq -r '.[]' | paste -sd '\n' -)
+          echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
+          echo "$VERSIONS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      #   run: |
-      #     VERSIONS=$(jq -r '.[]' versions.json | paste -sd '\n' -)
-      #     echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
-      #     echo "$VERSIONS" >> $GITHUB_ENV
-      #     echo "EOF" >> $GITHUB_ENV
-      #
-      # - name: Upload to Modrinth
-      #   uses: cloudnode-pro/modrinth-publish@v2
-      #   with:
-      #     token: ${{ secrets.MODRINTH_TOKEN }}
-      #     project: ${{ secrets.MODRINTH_PROJECT_ID }}
-      #     name: v${{ github.event.inputs.version }}
-      #     version: ${{ github.event.inputs.version }}
-      #     status: draft
-      #     loaders: |-
-      #       fabric
-      #     game-versions: |-
-      #       ${{ env.MINECRAFT_VERSIONS }}
-      #     files: build/libs/DiscordJustSync-${{ github.ref_name }}-${{ github.event.inputs.version }}.jar
+      - name: Upload to Modrinth
+        uses: cloudnode-pro/modrinth-publish@v2
+        with:
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          project: ${{ secrets.MODRINTH_PROJECT_ID }}
+          name: v${{ github.event.inputs.version }}
+          version: ${{ github.event.inputs.version }}
+          status: draft
+          loaders: |-
+            fabric
+          game-versions: |-
+            ${{ env.MINECRAFT_VERSIONS }}
+          files: versions${{ matrix.version }}/build/libs/DiscordJustSync*.jar
