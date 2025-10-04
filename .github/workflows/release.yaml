@@ -40,6 +40,8 @@ jobs:
     outputs:
         versions: ${{ steps.set-matrix.outputs.versions }}
     steps: 
+      - name: checkout repository
+        uses: actions/checkout@v5
       - name: generate versions json and set matrix 
         id: set-matrix
         run: |
