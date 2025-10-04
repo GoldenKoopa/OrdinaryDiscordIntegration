@@ -51,6 +51,7 @@ jobs:
   release:
     name: Release
     # needs: [build]
+    needs: [generate-versions]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -71,7 +72,7 @@ jobs:
 
       - name: Load generated versions into env var
         env:
-          version: $ {{ matrix.version }}
+          version: ${{ matrix.version }}
         run: |
           echo "$version"
 
