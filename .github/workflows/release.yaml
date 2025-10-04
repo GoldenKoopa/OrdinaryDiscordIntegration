@@ -81,6 +81,10 @@ jobs:
           echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
           echo "$VERSIONS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+      - name: Load filename into env var
+        run: |
+          filename=$(ls versions/${{ matrix.version }}/build/libs/ | grep -v all | grep -v sources)
+          echo -n "FILENAME=$filename" >> "$GITHUB_ENV"
 
       - name: Upload to Modrinth
         uses: cloudnode-pro/modrinth-publish@v2
