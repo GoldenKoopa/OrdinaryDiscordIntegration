@@ -201,12 +201,17 @@ public final class Utils {
         return message;
     }
 
-    private static String formatSharedLocationVoxel(Matcher matcher, Config config, ServerPlayerEntity player) {
+    private static String formatSharedLocationVoxel(
+            Matcher matcher, Config config, ServerPlayerEntity player) {
         String x = matcher.group(1);
         String y = matcher.group(2);
         String z = matcher.group(3);
-        String dim = DIMENSION_MAP.getOrDefault(
-            player.getWorld().getRegistryKey(), "Unknown");
+        //? if >= 1.21.6 {
+        String dim = DIMENSION_MAP.getOrDefault(player.getWorld().getRegistryKey(), "Unknown");
+        //?} else {
+        /*String dim =
+                DIMENSION_MAP.getOrDefault(player.getServerWorld().getRegistryKey(), "Unknown");
+        *///?}
 
         return replacePlaceholdersWaypoint("Shared Location", "S", dim, x, y, z, config);
     }
