@@ -147,9 +147,12 @@ jobs:
       - name: Load changelog into env
         run: |
           most_recent_version=$(ls versions | sort | tail -1)
+          echo $most_recent_version
           if [[ "$most_recent_version" = "${{ matrix.versions }}" ]]; then
+            echo test
             echo -n "CHANGELOG=${{ needs.release-github.outputs.release-notes }}" >> "$GITHUB_ENV"
           else 
+            echo test2
             echo -n "CHANGELOG=" >> "$GITHUB_ENV"
           fi
 
