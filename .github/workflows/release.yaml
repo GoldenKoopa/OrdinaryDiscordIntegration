@@ -1,19 +1,38 @@
 name: Release
 
-on: 
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Mod version (without leading v)'
-        required: true
-        default: ''
+on: workflow_dispatch
 
 permissions:
   contents: read # for checkout
 
 jobs:
+  release-dry:
+  name: Release Dry Run
+  runs-on: ubuntu-latest
+  permissions:
+    contents: write
+    issues: write
+    pull-requests: write
+    id-token: write
+  outputs:
+    version: ${{ steps.semantic-release-dry.outputs.new_release_version }}
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Semantic Release
+      uses: cycjimmy/semantic-release-action@v4
+      id: semantic-release-dry
+      with:
+        dry_run: true
+        semantic_version: 24.2.3
+        extra_plugins: |
+          conventional-changelog-conventionalcommits
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
     runs-on: ubuntu-latest
+    needs: [release-dry]
     steps:
       - name: checkout repository
         uses: actions/checkout@v5
@@ -27,7 +46,7 @@ jobs:
       - name: gradle setup
         uses: gradle/actions/setup-gradle@v5
       - name: build
-        run: ./gradlew build -Pversion=v${{ github.event.inputs.version }}
+        run: ./gradlew build -Pversion=v${{ needs.release-dry.outputs.version }}
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -50,11 +69,41 @@ jobs:
         run: |
           echo -n "versions=$(./.github/scripts/generate-versions)" >> "$GITHUB_OUTPUT"
           pwd 
+  release-github:
+    name: Release GitHub
+    needs: [build]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semantic-release-dry.outputs.new_release_version }}
+      release-notes: $ {{ steps.semantic-release.outputs.new_release_notes }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: artifacts
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        id: semantic-release
+        with:
+          semantic_version: 24.2.3
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/github
+            conventional-changelog-conventionalcommits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
 
-  release:
-    name: Release
-    # needs: [build]
-    needs: [generate-versions, build]
+  release-modrinth:
+    name: Release Modrinth
+    needs: [release-github, generate-versions, build]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -83,17 +132,25 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
       - name: Load filename into env var
         run: |
-          ls artifacts
           filename=$(ls artifacts/${{ matrix.version }}/build/libs/ | grep -v all | grep -v sources)
           echo -n "FILENAME=$filename" >> "$GITHUB_ENV"
+      - name: Load changelog into env
+        run: |
+          most_recent_version=$(ls versions | sort | tail -1)
+          if [[ "$most_recent_version" = "${{ matrix.versions }}" ]]; then
+            echo -n "CHANGELOG=${{ needs.release-github.outputs.release-notes }}" >> "$GITHUB_ENV"
+          else 
+            echo -n "CHANGELOG=" >> "$GITHUB_ENV"
+          fi
 
       - name: Upload to Modrinth
         uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ secrets.MODRINTH_PROJECT_ID }}
-          name: v${{ github.event.inputs.version }}
-          version: ${{ github.event.inputs.version }}
+          name: v${{ needs.release-github.outputs.version }}
+          version: ${{ needs.release-github.outputs.version }}
+          changelog: ${{ env.CHANGELOG }}
           status: unlisted
           loaders: |-
             fabric
