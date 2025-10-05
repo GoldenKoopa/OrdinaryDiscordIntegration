@@ -20,11 +20,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v5
         id: semantic-release-dry
         with:
           dry_run: true
           semantic_version: 24.2.3
+          branches: |
+            [
+              'master',
+              'stonecutter'
+            ]
           extra_plugins: |
             conventional-changelog-conventionalcommits
         env:
@@ -90,10 +95,15 @@ jobs:
           name: Artifacts
           path: artifacts
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v5
         id: semantic-release
         with:
           semantic_version: 24.2.3
+          branches: |
+            [
+              'master',
+              'stonecutter'
+            ]
           extra_plugins: |
             @semantic-release/git
             @semantic-release/github
