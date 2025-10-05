@@ -57,9 +57,9 @@ jobs:
         with:
           name: Artifacts
           path: |
+            versions/*/build/libs/*
             !versions/*/build/libs/*-all.jar
             !versions/*/build/libs/*-sources.jar
-            versions/*/build/libs/*
 
   generate-versions:
     name: Generate versions
@@ -79,7 +79,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.semantic-release-dry.outputs.new_release_version }}
+      version: ${{ steps.semantic-release.outputs.new_release_version }}
       release-notes: $ {{ steps.semantic-release.outputs.new_release_notes }}
     permissions:
       contents: write
