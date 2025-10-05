@@ -25,11 +25,6 @@ jobs:
         with:
           dry_run: true
           semantic_version: 24.2.3
-          branches: |
-            [
-              'master',
-              'stonecutter'
-            ]
           extra_plugins: |
             conventional-changelog-conventionalcommits
         env:
@@ -99,11 +94,6 @@ jobs:
         id: semantic-release
         with:
           semantic_version: 24.2.3
-          branches: |
-            [
-              'master',
-              'stonecutter'
-            ]
           extra_plugins: |
             @semantic-release/git
             @semantic-release/github
