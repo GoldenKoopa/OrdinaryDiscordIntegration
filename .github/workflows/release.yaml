@@ -148,7 +148,7 @@ jobs:
         run: |
           most_recent_version=$(ls versions | sort | tail -1)
           echo $most_recent_version
-          if [[ "$most_recent_version" = "${{ matrix.versions }}" ]]; then
+          if [[ "$most_recent_version" = "${{ matrix.version }}" ]]; then
             echo test
             echo -n "CHANGELOG=${{ needs.release-github.outputs.release-notes }}" >> "$GITHUB_ENV"
           else 
