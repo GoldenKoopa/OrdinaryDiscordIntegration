@@ -148,8 +148,7 @@ jobs:
         run: |
           most_recent_version=$(ls versions | sort | tail -1)
           if [[ "$most_recent_version" = "${{ matrix.version }}" ]]; then
-            # echo -n "CHANGELOG=${{ needs.release-github.outputs.release-notes }}" >> "$GITHUB_ENV"
-            echo "MINECRAFT_VERSIONS<<EOF" >> $GITHUB_ENV
+            echo "CHANGELOG<<EOF" >> $GITHUB_ENV
             echo "${{ needs.release-github.outputs.release-notes }}" >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
           else 
